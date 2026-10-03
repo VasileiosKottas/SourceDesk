@@ -1,29 +1,33 @@
 from flask import request, jsonify
+from flask import Blueprint
 from app.extensions import db
 from app.models.user import User
 from app.services.auth import register_user, authenticate_user
+from flask import Blueprint, request, jsonify, session
 
-@app.route('/register', methods=['POST'])
+auth_bp = Blueprint("auth", __name__)
+
+@auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.json
-    user = register_user(data['name'], data['email'], data['password'])
-    return jsonify({'message': 'User registered successfully', 'user': user.to_dict()}), 201
+    try:
+        user = register_user(data['name'], data['email'], data['password'])
+    except ValueError as e:
+        return jsonify({'message': str(e)}), 400
+    return jsonify({'message': 'User registered successfully', 'user': user}), 201
 
-@app.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
-    user = authenticate_user(data['email'], data['password'])
-    return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
+    try:
+        user = authenticate_user(data['email'], data['password'])
+        session["user_id"] = user["id"]
+    except ValueError as e:
+        return jsonify({'message': str(e)}), 400
+    return jsonify({'message': 'Login successful', 'user': user}), 200
 
-@app.route('/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     session.pop('user_id', None)
-    session.pop('user_email', None)
-    session.pop('user_name', None)
-    session.pop('user_password', None)
-    session.pop('user_created_at', None)
-    session.pop('user_updated_at', None)
-    session.pop('user_is_active', None)
-    session.pop('user_is_superuser', None)
     return jsonify({'message': 'Logout successful', 'user': None}), 200
