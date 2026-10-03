@@ -1,12 +1,36 @@
-from pydantic import BaseModel
+from datetime import datetime, timezone
 
-class User(BaseModel):
-    id: int = Field(default_factory=lambda: uuid.uuid4())
-    name: str = Field(min_length=3, max_length=50)
-    email: EmailStr = Field(unique=True)
-    password: str = Field(min_length=8, max_length=100, regex=r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    is_active: bool = Field(default=True)
-    is_superuser: bool = Field(default=False)
+from app.extensions import db
 
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    is_superuser = db.Column(db.Boolean, nullable=False, default=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "is_active": self.is_active,
+            "is_superuser": self.is_superuser,
+        }
