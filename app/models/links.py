@@ -26,6 +26,9 @@ class Link(db.Model):
 
     user = db.relationship("User", back_populates="links")
 
+    content_text = db.Column(db.Text, nullable=True) # for text content
+    content_error = db.Column(db.Text, nullable=True) # for error messages
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -36,4 +39,6 @@ class Link(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "is_active": self.is_active,
             "user": self.user.to_dict(),
+            "content_text": self.content_text,
+            "content_error": self.content_error,
         }

@@ -13,6 +13,9 @@ class File(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     user = db.relationship("User", back_populates="files")
+    content_text = db.Column(db.Text, nullable=True) # for text content
+    content_error = db.Column(db.Text, nullable=True) # for error messages
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -23,6 +26,8 @@ class File(db.Model):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "is_active": self.is_active,
-            "user": self.user.to_dict()
+            "user": self.user.to_dict(),
+            "content_text": self.content_text,
+            "content_error": self.content_error,
         }
         

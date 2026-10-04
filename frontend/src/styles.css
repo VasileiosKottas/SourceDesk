@@ -130,3 +130,20 @@ a {
 .file-picker {
   margin-top: 1rem;
 }
+
+.item-button {
+  width: fit-content;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1c1917;
+  text-align: left;
+}
+
+.content {
+  margin: 1rem 0 0;
+  white-space: pre-wrap;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}

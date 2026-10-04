@@ -16,7 +16,12 @@ def load_env():
 
 load_env()
 
+_default_db = Path(__file__).resolve().parent.parent / "sourcedesk.db"
+
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URL"]
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL",
+        "sqlite:///" + _default_db.as_posix(),
+    )
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret")

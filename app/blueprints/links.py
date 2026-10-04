@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 
 from app.extensions import db
-from app.services.links import create_link, list_links
+from app.services.links import create_link, list_links, get_link
 
 links_bp = Blueprint("links", __name__)
 
@@ -32,3 +32,17 @@ def list_links_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     return jsonify({"message": "Links listed successfully", "links": links}), 200
+
+@links_bp.get("/links/<int:link_id>")
+def get_link_route(link_id):
+    user_id = session.get("user_id")
+    if user_id is None:
+        return jsonify({"message": "Login required"}), 401
+    
+    try:
+        record = get_link(user_id, link_id)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    if record is None:
+        return jsonify({"message": "Link not found"}), 404
+    return jsonify({"message": "Link retrieved successfully", "link": record}), 200

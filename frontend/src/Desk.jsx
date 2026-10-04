@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createLink, getFiles, getLinks, logout, uploadFile } from "./api";
+import { createLink, getFile, getFiles, getLink, getLinks, logout, uploadFile } from "./api";
 
 export default function Desk({ user, onLogout }) {
   const [links, setLinks] = useState([]);
@@ -8,6 +8,7 @@ export default function Desk({ user, onLogout }) {
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
 
   async function load() {
     const [linkData, fileData] = await Promise.all([getLinks(), getFiles()]);
@@ -53,6 +54,16 @@ export default function Desk({ user, onLogout }) {
     onLogout();
   }
 
+  async function openItem(kind, id) {
+    setError("");
+    try {
+      const data = kind === "file" ? await getFile(id) : await getLink(id);
+      setSelected({ kind, item: data.file || data.link });
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <main className="desk">
       <header>
@@ -93,8 +104,11 @@ export default function Desk({ user, onLogout }) {
           <ul>
             {links.map((link) => (
               <li key={link.id}>
-                <a href={link.url}>{link.title}</a>
+                <button type="button" className="item-button" onClick={() => openItem("link", link.id)}>
+                  {link.title}
+                </button>
                 {link.notes && <span>{link.notes}</span>}
+                {link.content_error && <span className="error">{link.content_error}</span>}
               </li>
             ))}
           </ul>
@@ -112,15 +126,30 @@ export default function Desk({ user, onLogout }) {
           <ul>
             {files.map((file) => (
               <li key={file.id}>
-                <strong>{file.file_name}</strong>
+                <button type="button" className="item-button" onClick={() => openItem("file", file.id)}>
+                  {file.file_name}
+                </button>
                 <span>
                   {file.file_type} · {file.file_size} bytes
                 </span>
+                {file.content_error && <span className="error">{file.content_error}</span>}
               </li>
             ))}
           </ul>
         )}
       </section>
+      {selected && (
+        <section className="panel">
+          <h2>{selected.item.file_name || selected.item.title}</h2>
+          {selected.kind === "link" && (
+            <a href={selected.item.url}>{selected.item.url}</a>
+          )}
+          {selected.item.content_error && <p className="error">{selected.item.content_error}</p>}
+          {selected.item.content_text && (
+            <pre className="content">{selected.item.content_text}</pre>
+          )}
+        </section>
+      )}
     </main>
   );
 }

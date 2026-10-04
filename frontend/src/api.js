@@ -38,6 +38,10 @@ export function getLinks() {
   return request("/links");
 }
 
+export function getLink(id) {
+  return request(`/links/${id}`);
+}
+
 export function createLink(url, title, notes) {
   return request("/links", {
     method: "POST",
@@ -48,6 +52,10 @@ export function createLink(url, title, notes) {
 
 export function getFiles() {
   return request("/files");
+}
+
+export function getFile(id) {
+  return request(`/files/${id}`);
 }
 
 export function uploadFile(file) {
