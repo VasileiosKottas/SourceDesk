@@ -24,6 +24,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     is_superuser = db.Column(db.Boolean, nullable=False, default=False)
     links = db.relationship("Link", back_populates="user")
+    files = db.relationship("File", back_populates="user")
 
     def to_dict(self):
         return {

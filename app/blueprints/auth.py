@@ -29,5 +29,15 @@ def login():
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     session.clear()
-    session.pop('user_id', None)
     return jsonify({'message': 'Logout successful', 'user': None}), 200
+
+@auth_bp.get('/me')
+def me():
+    user_id = session.get('user_id')
+    if user_id is None:
+        return jsonify({'message': 'Login required'}), 401
+    user = db.session.get(User, user_id)
+    if user is None:
+        session.clear()
+        return jsonify({'message': 'Login required'}), 401
+    return jsonify({'user': user.to_dict()})
