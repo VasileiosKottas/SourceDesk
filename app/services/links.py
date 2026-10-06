@@ -87,6 +87,13 @@ def create_link(user_id, url, title, notes):
     db.session.commit()
     return new_link.to_dict()
 
+def delete_link(user_id, link_id):
+    link = Link.query.filter_by(user_id=user_id, id=link_id).first()
+    if link:
+        db.session.delete(link)
+        db.session.commit()
+        return True
+    return False
 
 def list_links(user_id):
     links = Link.query.filter_by(user_id=user_id).all()

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 
 from app.extensions import db
-from app.services.links import create_link, list_links, get_link
+from app.services.links import create_link, list_links, get_link, delete_link
 
 links_bp = Blueprint("links", __name__)
 
@@ -20,6 +20,17 @@ def create_link_route():
         return jsonify({"error": str(e)}), 500
     return jsonify({"message": "Link created successfully", "link": link}), 201
 
+@links_bp.delete("/links/<int:link_id>")
+def delete_link_route(link_id):
+    user_id = session.get("user_id")
+    if user_id is None:
+        return jsonify({"message": "Login required"}), 401
+    
+    deleted = delete_link(user_id, link_id)
+    if not deleted:
+        return jsonify({"message": "Link not found"}), 404
+
+    return jsonify({"message": "Link deleted successfully"}), 200
 
 @links_bp.get("/links")
 def list_links_route():

@@ -63,3 +63,15 @@ export function uploadFile(file) {
   body.append("file", file);
   return request("/files", { method: "POST", body });
 }
+
+export function getQuestions() {
+  return request("/questions");
+}
+
+export function askQuestion(question) {
+  return request("/ask-question", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+}

@@ -11,6 +11,8 @@ export default defineConfig({
       "/me": "http://127.0.0.1:5000",
       "/links": "http://127.0.0.1:5000",
       "/files": "http://127.0.0.1:5000",
+      "/questions": "http://127.0.0.1:5000",
+      "/ask-question": "http://127.0.0.1:5000",
     },
   },
 });

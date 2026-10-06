@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, session
 
-from app.services.files import list_files, save_file, get_file
+from app.services.files import list_files, save_file, get_file, delete_file
 
 files_bp = Blueprint("files", __name__)
 
@@ -21,6 +21,18 @@ def create_file_route():
         return jsonify({"error": str(e)}), 500
     return jsonify({"message": "File saved successfully", "file": record}), 201
 
+@files_bp.delete("/files/<int:file_id>")
+def delete_file_route(file_id):
+    user_id = session.get("user_id")
+    if user_id is None:
+        return jsonify({"message": "Login required"}), 401
+    try:
+        deleted = delete_file(user_id, file_id)
+        if not deleted:
+            return jsonify({"message": "File not found"}), 404
+        return jsonify({"message": "File deleted successfully"}), 200
+    except Exception:
+        return jsonify({"error": "Failed to delete file"}), 500
 
 @files_bp.get("/files")
 def list_files_route():
@@ -47,3 +59,4 @@ def get_file_route(file_id):
     if record is None:
         return jsonify({"message": "File not found"}), 404
     return jsonify({"message": "File retrieved successfully", "file": record}), 200
+
