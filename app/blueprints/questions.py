@@ -4,6 +4,7 @@ from app.services.questions import (
     ask_model,
     create_question,
     list_questions,
+    select_passages,
     readable_sources,
     save_asked_question,
     delete_question
@@ -75,12 +76,39 @@ def ask_question_route():
     if not sources:
         return jsonify({"message": "No readable sources found"}), 400
 
+    try:
+        chosen_passages = select_passages(question, sources)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    if not chosen_passages:
+        return jsonify({"message": "Nothing in your sources matches this question"}), 400
+
+    grouped = {}
+    for passage in chosen_passages:
+        key = (passage["kind"], passage["source"]["id"])
+        bucket = grouped.get(key)
+        if bucket is None:
+            bucket = {
+                "label": passage["label"],
+                "kind": passage["kind"],
+                "source": passage["source"],
+                "parts": [],
+            }
+            grouped[key] = bucket
+        bucket["parts"].append(passage["passage"])
+
     blocks = []
     labels = []
-    for source in sources:
-        kind, label = source_label(source)
-        labels.append({"id": source["id"], "kind": kind, "label": label})
-        blocks.append(f"{label}\n{source['content_text']}")
+    used = []
+    for bucket in grouped.values():
+        blocks.append(f"{bucket['label']}\n" + "\n\n".join(bucket["parts"]))
+        labels.append({
+            "id": bucket["source"]["id"],
+            "kind": bucket["kind"],
+            "label": bucket["label"],
+        })
+        used.append(bucket["source"])
 
     try:
         answer = ask_model(question, blocks)
@@ -91,7 +119,7 @@ def ask_question_route():
     return jsonify({
         "message": "Question asked successfully",
         "answer": answer,
-        "sources": sources,
+        "sources": used,
         "labels": labels,
         "question": record,
     }), 200

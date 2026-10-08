@@ -50,6 +50,10 @@ export function createLink(url, title, notes) {
   });
 }
 
+export function deleteLink(id) {
+  return request(`/links/${id}`, { method: "DELETE" });
+}
+
 export function getFiles() {
   return request("/files");
 }
@@ -58,14 +62,26 @@ export function getFile(id) {
   return request(`/files/${id}`);
 }
 
+export function getFilePages(id) {
+  return request(`/files/${id}/pages`);
+}
+
 export function uploadFile(file) {
   const body = new FormData();
   body.append("file", file);
   return request("/files", { method: "POST", body });
 }
 
+export function deleteFile(id) {
+  return request(`/files/${id}`, { method: "DELETE" });
+}
+
 export function getQuestions() {
   return request("/questions");
+}
+
+export function deleteQuestion(id) {
+  return request(`/questions/${id}`, { method: "DELETE" });
 }
 
 export function askQuestion(question) {

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 import {
   askQuestion,
   createLink,
   getFile,
+  getFilePages,
   getFiles,
   getLink,
   getLinks,
@@ -10,6 +13,60 @@ import {
   logout,
   uploadFile,
 } from "./api";
+
+const MATH = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
+
+function visibleAnswer(text) {
+  return text.replace(/\n*Sources used:[\s\S]*$/i, "").trimEnd();
+}
+
+function answerParts(text) {
+  const parts = [];
+  let last = 0;
+  for (const match of text.matchAll(MATH)) {
+    if (match.index > last) {
+      parts.push({ text: text.slice(last, match.index) });
+    }
+    parts.push({
+      tex: match[1] !== undefined ? match[1] : match[2],
+      display: match[1] !== undefined,
+    });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) {
+    parts.push({ text: text.slice(last) });
+  }
+  return parts;
+}
+
+function AnswerText({ text }) {
+  const parts = answerParts(visibleAnswer(text));
+  return (
+    <div className="answer">
+      {parts.map((part, index) => {
+        if (part.tex === undefined) {
+          return (
+            <span key={index} className="answer-text">
+              {part.text}
+            </span>
+          );
+        }
+        const html = katex.renderToString(part.tex, {
+          throwOnError: false,
+          displayMode: part.display,
+        });
+        const Tag = part.display ? "div" : "span";
+        return (
+          <Tag
+            key={index}
+            className={part.display ? "math-display" : "math-inline"}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Desk({ user, onLogout }) {
   const [links, setLinks] = useState([]);
@@ -26,6 +83,7 @@ export default function Desk({ user, onLogout }) {
   const [currentId, setCurrentId] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [asking, setAsking] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
 
   async function load() {
     const [linkData, fileData, questionData] = await Promise.all([
@@ -97,9 +155,15 @@ export default function Desk({ user, onLogout }) {
 
   async function openItem(kind, id) {
     setError("");
+    setPageCount(0);
     try {
       const data = kind === "file" ? await getFile(id) : await getLink(id);
-      setSelected({ kind, item: data.file || data.link });
+      const item = data.file || data.link;
+      setSelected({ kind, item });
+      if (kind === "file" && item.file_name?.toLowerCase().endsWith(".pdf")) {
+        const pages = await getFilePages(item.id);
+        setPageCount(pages.count);
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -130,7 +194,7 @@ export default function Desk({ user, onLogout }) {
             {asking ? <span className="spinner" aria-label="Asking" /> : "Ask"}
           </button>
         </form>
-        {answer && <p className="answer">{answer}</p>}
+        {answer && <AnswerText text={answer} />}
         {sources.length > 0 && (
           <ul>
             {sources.map((source) => {
@@ -166,7 +230,7 @@ export default function Desk({ user, onLogout }) {
                   </button>
                   {openId === item.id && (
                     <>
-                      {item.answer && <p className="answer">{item.answer}</p>}
+                      {item.answer && <AnswerText text={item.answer} />}
                       {(item.labels || []).map((label) => (
                         <button
                           key={`${item.id}-${label.kind}-${label.id}`}
@@ -256,6 +320,15 @@ export default function Desk({ user, onLogout }) {
           {selected.item.content_text && (
             <pre className="content">{selected.item.content_text}</pre>
           )}
+          {pageCount > 0 &&
+            Array.from({ length: pageCount }, (_, n) => (
+              <img
+                key={n}
+                className="page-image"
+                src={`/files/${selected.item.id}/pages/${n}`}
+                alt={`${selected.item.file_name} page ${n + 1}`}
+              />
+            ))}
         </section>
       )}
     </main>

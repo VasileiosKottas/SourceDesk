@@ -1,6 +1,8 @@
+import io
 import uuid
 from pathlib import Path
 
+import pypdfium2 as pdfium
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 from werkzeug.utils import secure_filename
@@ -69,6 +71,49 @@ def read_pdf(path):
         return None, "This PDF has no readable text."
     return "\n\n".join(parts), None
 
+def _stored_pdf(user_id, file_id):
+    record = File.query.filter_by(user_id=user_id, id=file_id).first()
+    if record is None or not record.file_name.lower().endswith(".pdf"):
+        return None
+    path = STORAGE_ROOT.parent / record.file_path
+    if not path.is_file():
+        return None
+    return path
+
+
+def pdf_page_count(user_id, file_id):
+    path = _stored_pdf(user_id, file_id)
+    if path is None:
+        return None
+    pdf = pdfium.PdfDocument(str(path))
+    try:
+        return len(pdf)
+    finally:
+        pdf.close()
+
+
+def render_pdf_page(user_id, file_id, page_index):
+    path = _stored_pdf(user_id, file_id)
+    if path is None:
+        return None
+    pdf = pdfium.PdfDocument(str(path))
+    page = None
+    bitmap = None
+    try:
+        if page_index < 0 or page_index >= len(pdf):
+            return None
+        page = pdf[page_index]
+        bitmap = page.render(scale=1.5)
+        image = bitmap.to_pil()
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+        return buf.getvalue()
+    finally:
+        if bitmap is not None:
+            bitmap.close()
+        if page is not None:
+            page.close()
+        pdf.close()
 
 def read_saved_file(path, suffix):
     suffix = suffix.lower()

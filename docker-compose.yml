@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://sourcedesk:sourcedesk@db:5432/sourcedesk
+    volumes:
+      - storage-data:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: sourcedesk
+      POSTGRES_PASSWORD: sourcedesk
+      POSTGRES_DB: sourcedesk
+    volumes:
+      - desk-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sourcedesk -d sourcedesk"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  desk-data:
+  storage-data:

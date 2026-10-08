@@ -169,9 +169,16 @@ a {
 
 .answer {
   margin: 1rem 0 0;
-  white-space: pre-wrap;
   font-family: "Segoe UI", sans-serif;
   line-height: 1.5;
+}
+
+.answer-text {
+  white-space: pre-wrap;
+}
+
+.math-display {
+  margin: 0.4rem 0;
 }
 
 .content {
@@ -180,4 +187,10 @@ a {
   font-family: "Segoe UI", sans-serif;
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+.page-image {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
 }

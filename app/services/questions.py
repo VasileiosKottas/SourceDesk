@@ -41,6 +41,56 @@ def list_questions(user_id):
     )
     return [row.to_dict() for row in rows]
 
+def passages(text):
+    chunks = []
+    for piece in text.split("\n\n"):
+        piece = piece.strip()
+        if not piece:
+            continue
+        if len(piece) <= 800:
+            chunks.append(piece)
+            continue
+        start = 0
+        while start < len(piece):
+            chunks.append(piece[start:start + 800])
+            start += 700
+    return chunks
+
+STOP = {"the", "and", "for", "with", "that", "this", "from"}
+def words(text):
+    cleaned = []
+    for raw in text.lower().split():
+        word = "".join(ch for ch in raw if ch.isalnum())
+        if len(word) >= 3 and word not in STOP:
+            cleaned.append(word)
+    return cleaned
+
+
+def source_label(source):
+    if "file_name" in source:
+        return "file", f"file: {source['file_name']}"
+    return "link", f"link: {source['title']}"
+
+
+def select_passages(question, sources, limit=8):
+    question_words = set(words(question))
+    scored = []
+    for source in sources:
+        kind, label = source_label(source)
+        for passage in passages(source["content_text"]):
+            score = len(question_words & set(words(passage)))
+            if score == 0:
+                continue
+            scored.append({
+                "score": score,
+                "source": source,
+                "kind": kind,
+                "label": label,
+                "passage": passage,
+            })
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored[:limit]
+
 
 def readable_sources(user_id):
     sources = []
@@ -56,7 +106,7 @@ def ask_model(question, blocks):
     sources = "\n\n".join(blocks)
     prompt = (
         "Answer the question using only the sources below. "
-        "Name the sources you used, with their labels such as file: notes.md or link: Example.\n\n"
+        "Do not list the sources in the answer.\n\n"
         f"{sources}\n\n"
         f"Question: {question}"
     )
